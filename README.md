@@ -1,6 +1,7 @@
 # How to use
 
 Installieren Sie die benötigten Module und starten Sie das Programm mit dem Befehl
+
 `python3 weather_prediction.py`
 
 
@@ -15,3 +16,6 @@ Folgende Module werden für die Ausführung des Programms benötigt und sind nic
 Installieren Sie die Module manuell oder nutzen Sie die beigefügte *requirements.txt*-Datei, um die Module in Ihre Python Umgebung zu laden.
 
 `pip install -r requirements.txt`
+
+## Daten
+Das Repository enthält aufgrund der begrenzten Speichermöglichkeit großer Dateien nur einen kleinen Anteil des originalen Datensatzes (~30%).
