@@ -15,6 +15,7 @@ class WeatherPrediction():
         self.attribute = attribute
         self.priori = {}
         self.training, self.test = self._create_sets(self.data, train_size=0.7)
+        self.test.to_csv("reduced_dataset.csv")
         self.X_train = self.training.iloc[:, :-1]
         self.X_test = self.test.iloc[:, :-1]
         self.y_train = self.training.iloc[:,-1]
@@ -22,6 +23,16 @@ class WeatherPrediction():
         self.random_predict = []
     
     def convert_to_numerical(self, data):
+        """Function to ensure, that columns are stored with correct data type
+
+        Parameters
+        ----------
+        data : pandas.DataFrame
+
+        Returns
+        -------
+        data
+        """
         for attribute in ["temp","pressure", "humidity","rain_1h"]:
             if attribute == "temp":
                 data['temp'] = data["temp"].apply(lambda x: float("".join(str(x)[:3])))
@@ -37,18 +48,27 @@ class WeatherPrediction():
                 plt.xlabel("humidity [%]")
             elif attribute == "rain_1h":
                 plt.xlabel("rain [%]")   
-            #data[attribute].plot.hist(bins=30, alpha=0.5, color="grey")
-            #plt.show()
-            #plt.clf()
+            data[attribute].plot.hist(bins=30, alpha=0.5, color="grey")
+            plt.show()
+            plt.clf()
         return data
     
     def add_play_column(self, data):
+        """Add column play, based on value of 'weather_main'
+
+        Parameters
+        ----------
+        data : pandas.DataFrame
+
+        Returns
+        -------
+        data
+        """
         data.loc[(data.weather_main == "Drizzle") | (data.weather_main == "Fog") \
         | (data.weather_main == "Haze")| (data.weather_main == "Mist")| (data.weather_main == "Rain")| (data.weather_main == "Thunderstorm") \
         | (data.weather_main == "Smoke")| (data.weather_main == "Dust")| (data.weather_main == "Squall") , 'play'] = float(0)
         data.loc[(data.weather_main == "Clear")| (data.weather_main == "Clouds")| (data.weather_main == "Snow"), 'play'] = float(1)
         data["rain_1h"] = data["rain_1h"].fillna(float(0))
-        data.to_csv("MEINE_DATEN.csv")
         data = data.drop(columns=["weather_main"])
         data = data.dropna()
         return data
@@ -93,15 +113,15 @@ class WeatherPrediction():
             conditional = np.sum(np.log(self.gaussian(i, X)))
             posterior = priori + conditional
             posteriors.append(posterior)
-            print(i,X,priori, conditional, posterior, posteriors)
+            # print(i,X,priori, conditional, posterior, posteriors)
         result = self.classes[np.argmax(posteriors)]
-        print("Result",result)
         return result
     
     def plot_likelihood(self):
+        """Plot likelihood functions
+        """
         for i, m in enumerate(self.mean):
             for j, v in enumerate(self.mean[i]):
-                #print(self.mean, self.var)
                 x_lower_limit = min([ self.mean[0][j] - 3*(self.var[0][j])**(1/2) ,  self.mean[0][j] - 3*(self.var[0][j])**(1/2) ])
                 x_upper_limit = max([ self.mean[0][j] + 3*(self.var[0][j])**(1/2) ,  self.mean[0][j] + 3*(self.var[0][j])**(1/2) ])
                 x_values = np.linspace(x_lower_limit,x_upper_limit,1000)
@@ -122,6 +142,8 @@ class WeatherPrediction():
 
 
     def fit(self):
+        """Train model by calculate mean and variance of each feature for each class
+        """
         # print(self.X_train,self.y_train)
         # print(self.X_test, self.y_test)
         features = self.X_train
@@ -135,6 +157,8 @@ class WeatherPrediction():
         self.calculate_priori(features, target)
     
     def predict(self):
+        """Predict the outcome for a set of params
+        """
         x = self.X_test
         predictions = [self.calculate_posterior(att) for att in x.to_numpy()]
         self.predictions = predictions
@@ -144,15 +168,18 @@ class WeatherPrediction():
         self.plot_likelihood()
     
     def random_set_accuracy(self):
+        """Function to compare real accuracy to a classifier with random prediction
+        """
         self.y_test = list(self.y_test)
         correct_prediction = 0
-        print(len(self.random_predict))
         for i, pred in enumerate(list(self.random_predict)):
             if self.y_test[i] == pred:
                 correct_prediction +=1
         self.random_acc = correct_prediction/len(self.y_test)
 
     def accuracy(self):
+        """Function to calculate the accuracy of all predictions by comparing those with the labled test data
+        """
         correct_zero = 0
         correct_one = 0
         ones = 1
@@ -171,6 +198,7 @@ class WeatherPrediction():
                 zeros += 1
         acc = (correct_one+correct_zero)/len(self.y_test)
 
+        #output generated with tabulate
         info = {
             'Parameter': [
                     "Size of train set",
@@ -190,8 +218,6 @@ class WeatherPrediction():
                     "Accuracy",
                     "Random decision accuracy"
                     ], 
-        
-        
             'Value': [  f"{len(self.X_train)} ({round(len(self.X_train)/(len(self.X_train)+len(self.X_test))*100,2)}%)", 
                     f"{len(self.X_test)} ({round(len(self.X_test)/(len(self.X_train)+len(self.X_test))*100,2)}%)",
                     f"{round((self.priori[0])*100,2)}%",
@@ -227,9 +253,3 @@ if __name__ == "__main__":
     WeatherClass.predict()
     WeatherClass.random_set_accuracy()
     WeatherClass.accuracy()
-
-# 0 [ 276. 1004.   69.  113.    0.] -1.55 -21.35 -22.90
-# 1 [ 276. 1004.   69.  113.    0.] -0.23 -17.55 -17.79 --> Result: 1.0
-
-
-
